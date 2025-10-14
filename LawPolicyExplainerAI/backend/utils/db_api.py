@@ -1,46 +1,120 @@
 from supabase import create_client
+from backend.utils.config_loader import get_supabase_credentials
+from datetime import datetime
+import json
 import os
-from dotenv import load_dotenv
-
-# Load .env file
-load_dotenv()
 
 
 # ===============================
 # Setup Supabase client
 # ===============================
-SUPABASE_URL = os.getenv("https://pmoamjggvhlpwfzhkrkp.supabase.co")
-SUPABASE_KEY = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtb2FtamdndmhscHdmemhrcmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTk4MjQsImV4cCI6MjA3MTMzNTgyNH0.dBMpTL_y2ETyqjWlSD2Tl3dbAMeOJtO2ChQRZK7gUUA")
+try:
+    SUPABASE_URL, SUPABASE_KEY = get_supabase_credentials()
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    print("Supabase client initialized successfully")
+except Exception as e:
+    print(f"Supabase connection failed: {e}")
+    print("Running in offline mode with local storage")
+    supabase = None
 
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError(
-        "❌ Missing SUPABASE_URL or SUPABASE_KEY in .env file.\n"
-        "Make sure your .env file exists in project root and looks like:\n\n"
-        "SUPABASE_URL=https://<your-project-id>.supabase.co\n"
-        "SUPABASE_KEY=<your-service-role-key>\n"
-    )
+# Local storage for offline mode
+LOCAL_STORAGE_FILE = "local_data.json"
 
-# Create client safely
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+def load_local_data():
+    """Load data from local JSON file"""
+    if os.path.exists(LOCAL_STORAGE_FILE):
+        with open(LOCAL_STORAGE_FILE, 'r') as f:
+            return json.load(f)
+    return {"users": [], "documents": []}
+
+def save_local_data(data):
+    """Save data to local JSON file"""
+    with open(LOCAL_STORAGE_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
 
 
 # ===============================
 # USERS
 # ===============================
-def create_user(name: str, email: str, role: str):
+def create_user(name: str, email: str, role: str, password: str = None):
     """Insert a new user into the database."""
-    response = supabase.table("users").insert({
+    user_data = {
         "name": name,
         "email": email,
-        "role": role
-    }).execute()
-    return response
+        "role": role,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    # Add password if provided (in a real app, you'd hash this)
+    if password:
+        user_data["password"] = password
+    
+    if supabase:
+        try:
+            response = supabase.table("users").insert(user_data).execute()
+            return response
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    user_id = len(data["users"]) + 1
+    new_user = {
+        "id": user_id,
+        "name": name,
+        "email": email,
+        "role": role,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    # Add password to local storage too
+    if password:
+        new_user["password"] = password
+    
+    data["users"].append(new_user)
+    save_local_data(data)
+    
+    # Create a mock response object
+    class MockResponse:
+        def __init__(self, data):
+            self.data = [data]
+    return MockResponse(new_user)
+
+def update_user_created_at(email: str, created_at: str):
+    """Update user's created_at field"""
+    if supabase:
+        try:
+            supabase.table("users").update({"created_at": created_at}).eq("email", email).execute()
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    for user in data["users"]:
+        if user["email"] == email:
+            user["created_at"] = created_at
+            break
+    save_local_data(data)
 
 
 def get_user_by_email(email: str):
     """Fetch a user by email."""
-    response = supabase.table("users").select("*").eq("email", email).execute()
-    return response
+    if supabase:
+        try:
+            response = supabase.table("users").select("*").eq("email", email).execute()
+            return response
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    user = next((u for u in data["users"] if u["email"] == email), None)
+    
+    # Create a mock response object
+    class MockResponse:
+        def __init__(self, data):
+            self.data = [data] if data else []
+    return MockResponse(user)
 
 
 # ===============================
@@ -55,15 +129,70 @@ def add_document(user_email: str, filename: str, content: str, summary: str, ris
 
     user_id = user.data[0]["id"]
 
-    response = supabase.table("documents").insert({
+    if supabase:
+        try:
+            response = supabase.table("documents").insert({
+                "user_id": user_id,
+                "filename": filename,
+                "content": content,
+                "summary": summary,
+                "risks": risks
+            }).execute()
+            return response
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    doc_id = len(data["documents"]) + 1
+    new_document = {
+        "id": doc_id,
         "user_id": user_id,
         "filename": filename,
         "content": content,
         "summary": summary,
-        "risks": risks
-    }).execute()
+        "risks": risks,
+        "created_at": datetime.now().isoformat()
+    }
+    data["documents"].append(new_document)
+    save_local_data(data)
+    
+    # Create a mock response object
+    class MockResponse:
+        def __init__(self, data):
+            self.data = [data]
+    return MockResponse(new_document)
 
-    return response
+
+def update_document_summary_risks(document_id: int, summary: str, risks: str):
+    """Update summary and risks for a given document id."""
+    if supabase:
+        try:
+            response = (
+                supabase
+                .table("documents")
+                .update({"summary": summary, "risks": risks})
+                .eq("id", document_id)
+                .execute()
+            )
+            return response
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    for doc in data["documents"]:
+        if doc["id"] == document_id:
+            doc["summary"] = summary
+            doc["risks"] = risks
+            save_local_data(data)
+            break
+    
+    # Create a mock response object
+    class MockResponse:
+        def __init__(self, data):
+            self.data = [data] if data else []
+    return MockResponse(None)
 
 
 def get_documents_by_user(email: str):
@@ -74,5 +203,37 @@ def get_documents_by_user(email: str):
 
     user_id = user.data[0]["id"]
 
-    response = supabase.table("documents").select("*").eq("user_id", user_id).execute()
-    return response.data
+    if supabase:
+        try:
+            response = supabase.table("documents").select("*").eq("user_id", user_id).execute()
+            return response.data
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    user_documents = [doc for doc in data["documents"] if doc["user_id"] == user_id]
+    return user_documents
+
+
+def delete_document(document_id: int, user_email: str):
+    """Delete a document by ID for a specific user."""
+    # Find user first
+    user = get_user_by_email(user_email)
+    if not user.data:
+        return {"error": "User not found"}
+
+    user_id = user.data[0]["id"]
+
+    if supabase:
+        try:
+            response = supabase.table("documents").delete().eq("id", document_id).eq("user_id", user_id).execute()
+            return {"success": True}
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local storage")
+    
+    # Fallback to local storage
+    data = load_local_data()
+    data["documents"] = [doc for doc in data["documents"] if not (doc["id"] == document_id and doc["user_id"] == user_id)]
+    save_local_data(data)
+    return {"success": True}
