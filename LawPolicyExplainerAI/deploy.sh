@@ -30,3 +30,4 @@ echo "4. Set environment variables in both platforms"
 echo ""
 echo "📖 See DEPLOYMENT.md for detailed instructions!"
 
+

@@ -9,3 +9,4 @@ cmds = ["echo 'Build phase completed'"]
 
 [start]
 cmd = "python main.py"
+

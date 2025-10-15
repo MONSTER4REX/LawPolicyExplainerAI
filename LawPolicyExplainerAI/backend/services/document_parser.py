@@ -118,3 +118,4 @@ def extract_text_from_txt(file_path: str) -> str:
     except Exception as e:
         return f"Error reading text file: {str(e)}"
 
+
