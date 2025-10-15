@@ -29,3 +29,4 @@ echo "3. Update CORS settings with your Vercel URL"
 echo "4. Set environment variables in both platforms"
 echo ""
 echo "📖 See DEPLOYMENT.md for detailed instructions!"
+
