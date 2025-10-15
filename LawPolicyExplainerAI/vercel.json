@@ -2,22 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/test.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/users.py", 
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    },
-    {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -27,37 +11,10 @@
   ],
   "routes": [
     {
-      "src": "/api/test",
-      "dest": "/api/test.py"
-    },
-    {
-      "src": "/api/users",
-      "dest": "/api/users.py"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/",
-      "dest": "/public/index.html"
-    },
-    {
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
-  ],
-  "functions": {
-    "api/test.py": {
-      "maxDuration": 30
-    },
-    "api/users.py": {
-      "maxDuration": 30
-    },
-    "api/index.py": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
 
 
