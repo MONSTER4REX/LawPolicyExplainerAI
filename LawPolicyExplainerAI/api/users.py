@@ -45,3 +45,4 @@ def handler(request):
         'statusCode': 405,
         'body': json.dumps({'error': 'Method not allowed'})
     }
+

@@ -2,8 +2,20 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/*.py",
+      "src": "api/test.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/users.py", 
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     },
     {
       "src": "frontend/package.json",
@@ -23,12 +35,26 @@
       "dest": "/api/users.py"
     },
     {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
   ],
   "functions": {
-    "api/*.py": {
+    "api/test.py": {
+      "maxDuration": 30
+    },
+    "api/users.py": {
+      "maxDuration": 30
+    },
+    "api/index.py": {
       "maxDuration": 30
     }
   }
