@@ -15,3 +15,7 @@ vercel --prod
 echo "✅ Deployment complete!"
 echo "🔗 Your app will be available at the provided Vercel URL"
 
+
+
+
+
