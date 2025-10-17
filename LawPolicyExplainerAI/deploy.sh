@@ -23,12 +23,18 @@ git push origin main
 echo "✅ Code pushed to GitHub!"
 echo ""
 echo "🎯 Next Steps:"
-echo "1. Go to Railway.app and deploy your backend"
+echo "1. Go to Render.com and deploy your backend"
 echo "2. Go to Vercel.com and deploy your frontend"
 echo "3. Update CORS settings with your Vercel URL"
 echo "4. Set environment variables in both platforms"
 echo ""
-echo "📖 See DEPLOYMENT.md for detailed instructions!"
+echo "📖 See RENDER_DEPLOYMENT.md for detailed instructions!"
+echo ""
+echo "🔧 Why Render instead of Railway?"
+echo "   ✅ No Railpack issues"
+echo "   ✅ Better Python support"
+echo "   ✅ More reliable deployment"
+echo "   ✅ Faster builds"
 
 
 
