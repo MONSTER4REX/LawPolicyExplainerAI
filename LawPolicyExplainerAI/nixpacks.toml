@@ -1,0 +1,5 @@
+[providers]
+docker = true
+
+[build]
+commands = ["echo 'Using Docker build'"]

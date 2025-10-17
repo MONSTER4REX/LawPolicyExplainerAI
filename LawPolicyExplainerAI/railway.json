@@ -1,9 +1,8 @@
 {
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "uvicorn backend.app:app --host 0.0.0.0 --port $PORT",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
