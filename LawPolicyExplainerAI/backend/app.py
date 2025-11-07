@@ -202,6 +202,45 @@ def list_documents(email: str):
         raise HTTPException(status_code=404, detail=docs["error"])
     return {"documents": docs}
 
+@app.get("/documents/{email}/{document_id}")
+def get_document_detail(email: str, document_id: int):
+    """Fetch a single document by id for a given user; backfill summary/risks if missing."""
+    # Ensure user exists
+    user = get_user_by_email(email)
+    if not user.data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get all docs for user and locate the requested one (storage backends differ)
+    docs = get_documents_by_user(email)
+    if isinstance(docs, dict) and "error" in docs:
+        raise HTTPException(status_code=404, detail=docs["error"])
+
+    doc = next((d for d in docs if int(d.get("id")) == int(document_id)), None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Ensure summary/risks exist; if missing, compute and persist
+    summary = doc.get("summary") or ""
+    risks = doc.get("risks") or ""
+    content = doc.get("content") or ""
+
+    changed = False
+    if not summary and content:
+        summary = summarize_text(content)
+        changed = True
+    if not risks and content:
+        risks = analyze_risks(content)
+        changed = True
+    if changed:
+        try:
+            update_document_summary_risks(int(document_id), summary, risks)
+        except Exception:
+            pass
+
+    doc["summary"] = summary
+    doc["risks"] = risks
+    return {"document": doc}
+
 @app.delete("/documents/{document_id}")
 def delete_document_route(document_id: int, email: str):
     """Delete a document by ID for a specific user"""

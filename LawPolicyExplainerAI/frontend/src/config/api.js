@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
   
   // Document endpoints
   DOCUMENTS: (email) => `${API_BASE_URL}/documents/${email}`,
+  DOCUMENT_BY_ID: (email, id) => `${API_BASE_URL}/documents/${encodeURIComponent(email)}/${id}`,
   DELETE_DOCUMENT: (docId) => `${API_BASE_URL}/documents/${docId}`,
   UPLOAD: `${API_BASE_URL}/upload`,
   

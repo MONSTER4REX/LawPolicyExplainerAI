@@ -9,7 +9,7 @@ const DocumentDetailPage = () => {
   const { user } = useAuth();
   const { docId } = useParams();
   const navigate = useNavigate();
-  const [document, setDocument] = useState(null);
+  const [docData, setDocData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,11 +20,10 @@ const DocumentDetailPage = () => {
 
   const fetchDocument = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.DOCUMENTS(user.email));
+      const response = await fetch(API_ENDPOINTS.DOCUMENT_BY_ID(user.email, docId));
       const data = await response.json();
       if (response.ok) {
-        const doc = data.documents.find(d => d.id === parseInt(docId));
-        setDocument(doc);
+        setDocData(data.document);
       }
     } catch (error) {
       console.error('Error fetching document:', error);
@@ -34,21 +33,21 @@ const DocumentDetailPage = () => {
   };
 
   const handleDownload = () => {
-    if (document) {
+    if (docData) {
       // Create a downloadable text file
-      const content = `Document: ${document.filename}\n\n` +
-                     `Summary:\n${document.summary || 'No summary available'}\n\n` +
-                     `Risk Analysis:\n${document.risks || 'No risk analysis available'}\n\n` +
-                     `Full Content:\n${document.content || 'No content available'}`;
+      const content = `Document: ${docData.filename}\n\n` +
+                     `Summary:\n${docData.summary || 'No summary available'}\n\n` +
+                     `Risk Analysis:\n${docData.risks || 'No risk analysis available'}\n\n` +
+                     `Full Content:\n${docData.content || 'No content available'}`;
       
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = window.document.createElement('a');
       a.href = url;
-      a.download = `${document.filename}_analysis.txt`;
-      document.body.appendChild(a);
+      a.download = `${docData.filename}_analysis.txt`;
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
   };
@@ -64,7 +63,7 @@ const DocumentDetailPage = () => {
     );
   }
 
-  if (!document) {
+  if (!docData) {
     return (
       <div className="document-detail-page">
         <div className="error-state">
@@ -85,7 +84,7 @@ const DocumentDetailPage = () => {
     return 'low';
   };
 
-  const riskLevel = getRiskLevel(document.risks);
+  const riskLevel = getRiskLevel(docData.risks);
 
   return (
     <div className="document-detail-page">
@@ -105,11 +104,11 @@ const DocumentDetailPage = () => {
               <FileText size={32} />
             </div>
             <div className="document-meta">
-              <h1 className="document-title">{document.filename}</h1>
+              <h1 className="document-title">{docData.filename}</h1>
               <div className="document-details">
                 <div className="detail-item">
                   <Calendar size={16} />
-                  <span>Uploaded {new Date(document.created_at).toLocaleDateString()}</span>
+                  <span>Uploaded {new Date(docData.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className={`risk-badge ${riskLevel}`}>
                   {riskLevel === 'none' ? (
@@ -131,8 +130,8 @@ const DocumentDetailPage = () => {
           <div className="content-section">
             <h2>Document Summary</h2>
             <div className="content-box">
-              {document.summary ? (
-                <p>{document.summary}</p>
+              {docData.summary ? (
+                <p>{docData.summary}</p>
               ) : (
                 <p className="no-content">No summary available for this document.</p>
               )}
@@ -142,9 +141,9 @@ const DocumentDetailPage = () => {
           <div className="content-section">
             <h2>Risk Analysis</h2>
             <div className="content-box">
-              {document.risks ? (
+              {docData.risks ? (
                 <div className="risks-content">
-                  {document.risks.split('\n').map((risk, index) => (
+                  {docData.risks.split('\n').map((risk, index) => (
                     risk.trim() && (
                       <div key={index} className="risk-item">
                         <AlertTriangle size={16} />
@@ -162,9 +161,9 @@ const DocumentDetailPage = () => {
           <div className="content-section">
             <h2>Full Document Content</h2>
             <div className="content-box full-content">
-              {document.content ? (
+              {docData.content ? (
                 <div className="document-content">
-                  {document.content.split('\n').map((paragraph, index) => (
+                  {docData.content.split('\n').map((paragraph, index) => (
                     paragraph.trim() && (
                       <p key={index} className="content-paragraph">
                         {paragraph.trim()}
