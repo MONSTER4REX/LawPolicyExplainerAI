@@ -54,6 +54,11 @@ class DocumentCreate(BaseModel):
 # Routes
 # ==========================
 
+@app.get("/")
+def health_check():
+    """Simple health check endpoint"""
+    return {"status": "ok", "message": "Law Policy Explainer API is running"}
+
 @app.post("/users")
 def add_user(user: UserCreate):
     """Create a new user"""
@@ -81,7 +86,7 @@ def get_user(email: str):
     res = get_user_by_email(email)
     if not res.data:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"user": res.data}
+    return {"user": res.data[0]}
 
 @app.post("/documents")
 def add_document_route(doc: DocumentCreate):   # renamed route fn to avoid confusion
@@ -89,7 +94,10 @@ def add_document_route(doc: DocumentCreate):   # renamed route fn to avoid confu
     # Ensure user exists
     user_res = get_user_by_email(doc.email)
     if not user_res.data:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Auto-create user if not found
+        default_name = doc.email.split("@")[0].replace(".", " ").title()
+        created = create_user(default_name, doc.email, "student", None)
+        user_res = created
 
     # Insert raw document first (empty summary/risks)
     insert_res = add_document(
@@ -131,7 +139,10 @@ async def upload_document(
     # Ensure user exists
     user_res = get_user_by_email(email)
     if not user_res.data:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Auto-create user if not found
+        default_name = email.split("@")[0].replace(".", " ").title()
+        created = create_user(default_name, email, "student", None)
+        user_res = created
 
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{file.filename}") as tmp_file:

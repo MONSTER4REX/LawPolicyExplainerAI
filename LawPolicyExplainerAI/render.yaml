@@ -14,3 +14,6 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         value: http://localhost:3000
+
+
+

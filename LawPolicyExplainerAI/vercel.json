@@ -1,4 +1,4 @@
-{
+ {
   "version": 2,
   "builds": [
     {
@@ -7,6 +7,10 @@
       "config": {
         "distDir": "build"
       }
+    },
+    {
+      "src": "api/**/*.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
@@ -14,10 +18,7 @@
       "src": "/(.*)",
       "dest": "/frontend/build/$1"
     }
-  ],
-  "env": {
-    "REACT_APP_API_URL": "https://your-backend-domain.railway.app"
-  }
+  ]
 }
 
 

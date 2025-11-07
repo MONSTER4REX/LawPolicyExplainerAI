@@ -43,6 +43,18 @@ function App() {
     return 'light';
   });
 
+  // Clean up initial loader splash screen if present
+  useEffect(() => {
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+      loader.style.opacity = '0';
+      loader.style.pointerEvents = 'none';
+      setTimeout(() => {
+        loader.remove();
+      }, 300);
+    }
+  }, []);
+
   // Apply theme immediately on mount and when it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {

@@ -44,21 +44,47 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch(API_ENDPOINTS.USERS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Always login the user (whether new or existing)
-        login(data.user);
+      if (isLogin) {
+        // Try to fetch existing user; if not found, create a minimal one
+        const getRes = await fetch(API_ENDPOINTS.USER_BY_EMAIL(formData.email));
+        if (getRes.ok) {
+          const data = await getRes.json();
+          login(data.user);
+        } else {
+          // Auto-create with sensible defaults
+          const inferredName = (formData.name && formData.name.trim())
+            ? formData.name.trim()
+            : formData.email.split('@')[0].replace('.', ' ').replace('_', ' ').trim();
+          const createRes = await fetch(API_ENDPOINTS.USERS, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: inferredName || 'User',
+              email: formData.email,
+              role: formData.role || 'student',
+              password: formData.password || 'default123',
+            }),
+          });
+          const createData = await createRes.json();
+          if (createRes.ok) {
+            login(createData.user);
+          } else {
+            setError(createData.detail || 'Unable to sign in');
+          }
+        }
       } else {
-        setError(data.detail || 'An error occurred');
+        // Sign up path: create or return existing
+        const response = await fetch(API_ENDPOINTS.USERS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          login(data.user);
+        } else {
+          setError(data.detail || 'An error occurred');
+        }
       }
     } catch (err) {
       console.error('Network error:', err);
