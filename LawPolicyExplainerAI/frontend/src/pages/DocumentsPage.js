@@ -3,6 +3,7 @@ import { useAuth } from '../App';
 import { FileText, Search, Filter, Calendar, AlertTriangle, CheckCircle, Trash2, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { API_ENDPOINTS } from '../config/api';
+import { getRiskLevel } from '../utils/riskUtils';
 import './DocumentsPage.css';
 
 const DocumentsPage = () => {
@@ -87,14 +88,6 @@ const DocumentsPage = () => {
     
     return matchesSearch;
   });
-
-  const getRiskLevel = (risks) => {
-    if (!risks) return 'none';
-    const riskCount = risks.split('\n').filter(line => line.trim()).length;
-    if (riskCount >= 5) return 'high';
-    if (riskCount >= 3) return 'medium';
-    return 'low';
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {

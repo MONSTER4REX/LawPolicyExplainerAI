@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, Calendar, AlertTriangle, CheckCircle, Download, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { API_ENDPOINTS } from '../config/api';
+import { getRiskLevel } from '../utils/riskUtils';
 import './GroupDetailPage.css';
 
 const GroupDetailPage = () => {
@@ -36,15 +37,20 @@ const GroupDetailPage = () => {
       }
 
       // Fetch all documents
-        const response = await fetch(API_ENDPOINTS.DOCUMENTS(user.email));
+      const response = await fetch(API_ENDPOINTS.DOCUMENTS(user.email));
       const data = await response.json();
       if (response.ok) {
         // Get group-document relationships from localStorage
         const groupDocs = JSON.parse(localStorage.getItem('groupDocuments') || '{}');
         const docIdsInGroup = groupDocs[parseInt(groupId)] || [];
         
+        // Convert all IDs to strings for consistent comparison
+        const docIdsInGroupStr = docIdsInGroup.map(id => String(id));
+        
         // Filter documents that belong to this group
-        const filteredDocs = data.documents.filter(doc => docIdsInGroup.includes(doc.id));
+        const filteredDocs = data.documents.filter(doc => 
+          docIdsInGroupStr.includes(String(doc.id))
+        );
         setGroupDocuments(filteredDocs);
       }
     } catch (error) {
@@ -52,15 +58,6 @@ const GroupDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getRiskLevel = (risks) => {
-    if (!risks || risks.trim() === '') return 'none';
-    const riskText = risks.toLowerCase();
-    if (riskText.includes('high') || riskText.includes('critical')) return 'high';
-    if (riskText.includes('medium') || riskText.includes('moderate')) return 'medium';
-    if (riskText.includes('low') || riskText.includes('minor')) return 'low';
-    return 'low';
   };
 
   if (loading) {

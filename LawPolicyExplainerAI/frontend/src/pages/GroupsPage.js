@@ -42,7 +42,7 @@ const GroupsPage = () => {
   const fetchData = async () => {
     try {
       // Fetch documents
-      const docsResponse = await fetch(`API_ENDPOINTS.DOCUMENTS(user.email)${user.email}`);
+      const docsResponse = await fetch(API_ENDPOINTS.DOCUMENTS(user.email));
       const docsData = await docsResponse.json();
       if (docsResponse.ok) {
         setDocuments(docsData.documents);
@@ -116,12 +116,25 @@ const GroupsPage = () => {
     window.dispatchEvent(new CustomEvent('groupsCountUpdated', { detail: updatedGroups.length }));
   };
 
-  const handleAddDocumentToGroup = (groupId) => {
+  const handleAddDocumentToGroup = async (groupId) => {
     setSelectedGroup(groupId);
+    // Refresh documents list when opening the modal
+    try {
+      const docsResponse = await fetch(API_ENDPOINTS.DOCUMENTS(user.email));
+      const docsData = await docsResponse.json();
+      if (docsResponse.ok) {
+        setDocuments(docsData.documents);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
     setShowAddDocModal(true);
   };
 
   const handleAddDocToGroup = (docId) => {
+    // Ensure docId is a string for consistent comparison
+    const docIdStr = String(docId);
+    
     // Get group-document relationships from localStorage
     const groupDocs = JSON.parse(localStorage.getItem('groupDocuments') || '{}');
     
@@ -130,8 +143,11 @@ const GroupsPage = () => {
       groupDocs[selectedGroup] = [];
     }
     
-    if (!groupDocs[selectedGroup].includes(docId)) {
-      groupDocs[selectedGroup].push(docId);
+    // Convert existing IDs to strings for comparison
+    const docsInGroup = groupDocs[selectedGroup].map(id => String(id));
+    
+    if (!docsInGroup.includes(docIdStr)) {
+      groupDocs[selectedGroup].push(docIdStr);
       localStorage.setItem('groupDocuments', JSON.stringify(groupDocs));
       
       // Update group document count
@@ -145,13 +161,20 @@ const GroupsPage = () => {
       setGroups(updatedGroups);
       localStorage.setItem('groups', JSON.stringify(updatedGroups));
       
-      alert(`Document added to group!`);
+      // Force re-render by updating state - this will refresh the modal display
+      setDocuments([...documents]);
+      
+      // Show success message briefly
+      const successMsg = document.createElement('div');
+      successMsg.textContent = 'Document added to group!';
+      successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+      document.body.appendChild(successMsg);
+      setTimeout(() => {
+        document.body.removeChild(successMsg);
+      }, 2000);
     } else {
       alert(`Document is already in this group!`);
     }
-    
-    setShowAddDocModal(false);
-    setSelectedGroup(null);
   };
 
   const handleEditGroup = (group) => {
@@ -405,9 +428,11 @@ const GroupsPage = () => {
                     const groupDocs = JSON.parse(localStorage.getItem('groupDocuments') || '{}');
                     const docsInGroup = groupDocs[selectedGroup] || [];
                     
-                    return documents.map(doc => {
-                      const isInGroup = docsInGroup.includes(doc.id);
-                      return (
+                  return documents.map(doc => {
+                    // Convert both to strings for consistent comparison
+                    const docIdStr = String(doc.id);
+                    const isInGroup = docsInGroup.some(id => String(id) === docIdStr);
+                    return (
                         <div key={doc.id} className={`document-item ${isInGroup ? 'in-group' : ''}`}>
                           <div className="document-info">
                             <FileText size={20} />

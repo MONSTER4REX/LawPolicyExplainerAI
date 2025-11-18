@@ -47,7 +47,6 @@ LawPolicyExplainerAI/
 │   │   └── styles/         # CSS files
 │   └── public/             # Static assets
 ├── docs/                   # Documentation
-├── deployment/             # Deployment configs
 └── tests/                  # Test files
 ```
 
@@ -76,9 +75,7 @@ LawPolicyExplainerAI/
    # Install dependencies
    pip install -r requirements.txt
    
-   # Create .env file
-   cp env.example .env
-   # Edit .env with your API keys
+   # Create .env file (see Configuration section below)
    
    # Start backend
    python -m uvicorn backend.app:app --reload
@@ -114,13 +111,6 @@ REACT_APP_API_URL=http://localhost:8000
 4. **Organize**: Create groups to categorize your documents
 5. **Get Help**: Use the AI assistant for support
 
-## 🌐 Deployment
-
-The application is configured for deployment on:
-- **Railway** (Backend)
-- **Vercel** (Frontend)
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🤝 Contributing
 

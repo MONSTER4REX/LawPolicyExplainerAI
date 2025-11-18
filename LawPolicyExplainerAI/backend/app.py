@@ -1,5 +1,5 @@
 # backend/app.py
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import tempfile
@@ -20,12 +20,10 @@ from backend.utils.config_loader import get_ai_config
 app = FastAPI(title="Law Policy Explainer API")
 
 # Add CORS middleware
-# CORS configuration for production and development
+# CORS configuration for development
 allowed_origins = [
     "http://localhost:3000", 
     "http://127.0.0.1:3000",
-    "https://law-policy-explainer.vercel.app",  # Vercel frontend URL (update this)
-    "https://law-policy-explainer-frontend.vercel.app",  # Alternative Vercel URL
 ]
 
 app.add_middleware(
@@ -49,6 +47,10 @@ class DocumentCreate(BaseModel):
     email: str        # find user by email
     filename: str
     content: str
+
+class AIHelpRequest(BaseModel):
+    query: str
+    user_email: str = ""
 
 # ==========================
 # Routes
@@ -203,7 +205,7 @@ def list_documents(email: str):
     return {"documents": docs}
 
 @app.get("/documents/{email}/{document_id}")
-def get_document_detail(email: str, document_id: int):
+def get_document_detail(email: str, document_id: str):
     """Fetch a single document by id for a given user; backfill summary/risks if missing."""
     # Ensure user exists
     user = get_user_by_email(email)
@@ -215,7 +217,7 @@ def get_document_detail(email: str, document_id: int):
     if isinstance(docs, dict) and "error" in docs:
         raise HTTPException(status_code=404, detail=docs["error"])
 
-    doc = next((d for d in docs if int(d.get("id")) == int(document_id)), None)
+    doc = next((d for d in docs if str(d.get("id")) == str(document_id)), None)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -233,7 +235,7 @@ def get_document_detail(email: str, document_id: int):
         changed = True
     if changed:
         try:
-            update_document_summary_risks(int(document_id), summary, risks)
+            update_document_summary_risks(document_id, summary, risks)
         except Exception:
             pass
 
@@ -242,7 +244,7 @@ def get_document_detail(email: str, document_id: int):
     return {"document": doc}
 
 @app.delete("/documents/{document_id}")
-def delete_document_route(document_id: int, email: str):
+def delete_document_route(document_id: str, email: str = Query(...)):
     """Delete a document by ID for a specific user"""
     result = delete_document(document_id, email)
     if "error" in result:
@@ -250,10 +252,10 @@ def delete_document_route(document_id: int, email: str):
     return {"status": "success", "message": "Document deleted successfully"}
 
 @app.post("/ai-help")
-async def ai_help_endpoint(request: dict):
+async def ai_help_endpoint(request: AIHelpRequest):
     """AI Assistant endpoint for help and support"""
-    query = request.get("query", "")
-    user_email = request.get("user_email", "")
+    query = request.query
+    user_email = request.user_email
     
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query is required")
@@ -317,6 +319,13 @@ async def ai_help_endpoint(request: dict):
                 ai_response = result["choices"][0]["message"]["content"].strip()
                 return {"response": ai_response}
             else:
+                error_detail = f"Status {response.status_code}"
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get("error", {}).get("message", error_detail)
+                except:
+                    pass
+                print(f"GROQ API error: {error_detail}")
                 return {"response": "I'm having trouble connecting to the AI service right now. Please try again later."}
         else:
             # Fallback response when GROQ API key is not available
@@ -327,7 +336,10 @@ async def ai_help_endpoint(request: dict):
                 "download": "You can download document analysis reports from the Documents page. Click the 'Download' button on any document to get a text file with the summary and risk analysis.",
                 "theme": "Switch between light and dark mode in Settings > Appearance. Your preference will be saved and persist across sessions.",
                 "delete": "To delete documents, go to the Documents page and click the red 'Delete' button. This action cannot be undone, so be careful.",
-                "summary": "Document summaries provide a plain-language explanation of complex legal documents, making them easier to understand for non-lawyers."
+                "summary": "Document summaries provide a plain-language explanation of complex legal documents, making them easier to understand for non-lawyers.",
+                "how": "I can help you with uploading documents, understanding risk analysis, creating groups, downloading reports, and managing your documents. What specific task would you like help with?",
+                "what": "This platform helps you analyze legal documents using AI. Upload PDF, DOCX, or TXT files to get automatic summaries and risk analysis. You can organize documents into groups and download analysis reports.",
+                "help": "I can assist you with: uploading documents, understanding risk analysis, creating document groups, downloading reports, changing themes, and deleting documents. What would you like to know more about?"
             }
             
             # Simple keyword matching for fallback responses
@@ -336,7 +348,7 @@ async def ai_help_endpoint(request: dict):
                 if keyword in query_lower:
                     return {"response": response}
             
-            return {"response": "I can help you with legal document analysis, risk assessment, uploading documents, creating groups, and using the platform. Please ask a specific question about these topics."}
+            return {"response": "I can help you with legal document analysis, risk assessment, uploading documents, creating groups, and using the platform. Please ask a specific question about these topics. If you need AI-powered responses, please ensure the GROQ_API_KEY is configured in your environment."}
             
     except Exception as e:
         print(f"Error in AI help endpoint: {e}")

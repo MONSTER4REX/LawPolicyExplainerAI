@@ -1,0 +1,1 @@
+write A program in java to display name and roll number of students. initialize respective array variables for 10 students. Handle ArrayIndexOutOfBounds Exception, so that any such problem does not cause illegal termination of program

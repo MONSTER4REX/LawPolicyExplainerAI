@@ -164,7 +164,7 @@ def add_document(user_email: str, filename: str, content: str, summary: str, ris
     return MockResponse(new_document)
 
 
-def update_document_summary_risks(document_id: int, summary: str, risks: str):
+def update_document_summary_risks(document_id, summary: str, risks: str):
     """Update summary and risks for a given document id."""
     if supabase:
         try:
@@ -182,7 +182,7 @@ def update_document_summary_risks(document_id: int, summary: str, risks: str):
     # Fallback to local storage
     data = load_local_data()
     for doc in data["documents"]:
-        if doc["id"] == document_id:
+        if str(doc["id"]) == str(document_id):
             doc["summary"] = summary
             doc["risks"] = risks
             save_local_data(data)
@@ -216,7 +216,7 @@ def get_documents_by_user(email: str):
     return user_documents
 
 
-def delete_document(document_id: int, user_email: str):
+def delete_document(document_id, user_email: str):
     """Delete a document by ID for a specific user."""
     # Find user first
     user = get_user_by_email(user_email)
@@ -234,6 +234,9 @@ def delete_document(document_id: int, user_email: str):
     
     # Fallback to local storage
     data = load_local_data()
-    data["documents"] = [doc for doc in data["documents"] if not (doc["id"] == document_id and doc["user_id"] == user_id)]
+    data["documents"] = [
+        doc for doc in data["documents"]
+        if not (str(doc["id"]) == str(document_id) and doc["user_id"] == user_id)
+    ]
     save_local_data(data)
     return {"success": True}

@@ -3,6 +3,7 @@ import { useAuth } from '../App';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, FileText, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
+import { getRiskLevel } from '../utils/riskUtils';
 import './DocumentDetailPage.css';
 
 const DocumentDetailPage = () => {
@@ -74,15 +75,6 @@ const DocumentDetailPage = () => {
       </div>
     );
   }
-
-  const getRiskLevel = (risks) => {
-    if (!risks || risks.trim() === '') return 'none';
-    const riskText = risks.toLowerCase();
-    if (riskText.includes('high') || riskText.includes('critical')) return 'high';
-    if (riskText.includes('medium') || riskText.includes('moderate')) return 'medium';
-    if (riskText.includes('low') || riskText.includes('minor')) return 'low';
-    return 'low';
-  };
 
   const riskLevel = getRiskLevel(docData.risks);
 
