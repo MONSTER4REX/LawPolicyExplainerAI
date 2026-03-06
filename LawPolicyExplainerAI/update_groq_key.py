@@ -18,8 +18,8 @@ def update_groq_key(api_key):
         # Create basic .env file
         with open(env_file, 'w') as f:
             f.write("# Supabase Configuration\n")
-            f.write("SUPABASE_URL=https://pmoamjggvhlpwfzhkrkp.supabase.co\n")
-            f.write("SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtb2FtamdndmhscHdmemhrcmtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTc1OTgyNCwiZXhwIjoyMDcxMzM1ODI0fQ.vvVe1lOyji5uyUyTT_UdVVnWsRAGDhZVDzG46aNiic0\n")
+            f.write("SUPABASE_URL")
+            f.write("SUPABASE_KEY")
             f.write("\n# GROQ API Key\n")
     
     # Read existing .env file
